@@ -6,7 +6,7 @@
 /*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/24 20:22:30 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/24 21:36:03 by marwan           ###   ########.fr       */
+/*   Updated: 2026/02/24 23:38:41 by marwan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,8 +33,6 @@ void Channel::broadcast(int sender_fd, const std::string &msg)
     for(std::map<int, Client*>::iterator it = _channelClients.begin(); it != _channelClients.end();it++)
     {
         if (it->first != sender_fd)
-        {
             send(it->first, msg.c_str(), msg.size(),0);
-        }
     }
 }

@@ -6,7 +6,7 @@
 /*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:20:44 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/24 21:29:03 by marwan           ###   ########.fr       */
+/*   Updated: 2026/02/26 01:15:17 by marwan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,36 @@ Server::Server(char *port, char* password) : _port(atoi(port)),  _password(passw
 
 Server::~Server(){}
 
+void Server::removeClientServ(int fd)
+{
+    _clients.erase(fd);
+    for(std::map<std::string, Channel>::iterator it = _channels.begin();it != _channels.end();it++)
+        it->second.removeClient(fd);
+}
+
+bool Server::checkNickname(const std::string &nickname) //je crois quen fait un vector de clients suffit car on peut avoir le fd dun client ! 
+{
+    for(std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end();it++)
+    {
+        if(it->second.get_nickname() == nickname)
+            return (false);
+    }
+    return (true);
+}
+
+void Server::part_channel(int fd,  std::string channelName)
+{
+    if (_channels.find(channelName) == _channels.end())
+    {
+        _channels[channelName] = Channel(channelName);
+        std::cout << "Channel" << channelName << " not found\n";
+    }
+    else 
+    {
+        _channels[channelName].removeClient(fd);
+        std::cout << "Client " << fd << " left channel : " << channelName << std::endl;
+    }
+}
 
 void Server::send_channel_msg(int fd, std::string channelName, std::string msg)
 {
@@ -57,6 +87,11 @@ void Server::parseCommand(int fd, std::string str)
         std::cout << "NICK command\n";
         std::string nickname;
         ss >> nickname;
+        if (!checkNickname(nickname))
+        {
+            std::cout << "Nickname already taken !\n";
+            return;
+        }
         _clients[fd].set_nickname(nickname);
         _clients[fd].set_nickOK(true);
         std::cout << "Nickname set : " << nickname << std::endl;
@@ -71,12 +106,22 @@ void Server::parseCommand(int fd, std::string str)
     }
     else if (token=="JOIN")
     {
+        if(!_clients[fd].is_Registered())
+        {
+            std::cout << "Client " << fd << " not registered!\n";
+            return;
+        }
         std::string channelName;
         ss >> channelName;
         join_channel(fd, channelName);
     }
     else if (token == "PRIVMSG")
     {
+        if(!_clients[fd].is_Registered())
+        {
+            std::cout << "Client " << fd << " not registered!\n";
+            return;
+        }
         std::string target;
         ss >> target;
         std::string msg;
@@ -84,6 +129,22 @@ void Server::parseCommand(int fd, std::string str)
         send_channel_msg(fd, target, msg);
         std::cout << "PRIVMSG command\n";
         
+    }
+    else if (token == "PART")
+    {
+        if(!_clients[fd].is_Registered())
+        {
+            std::cout << "Client " << fd << " not registered!\n";
+            return;
+        }
+        std::string channelName;
+        ss >> channelName;
+        part_channel(fd, channelName);
+    }
+    else if (token == "QUIT")
+    {
+        removeClientServ(fd);
+        std::cout << "Client " << fd << " have been remove from all channels and his fd has been erase from the server.\n";
     }
     else std::cout << "Unknow command\n";
     if (_clients[fd].is_Registered())

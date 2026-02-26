@@ -6,7 +6,7 @@
 /*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:17:48 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/24 21:25:14 by marwan           ###   ########.fr       */
+/*   Updated: 2026/02/26 01:10:13 by marwan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,9 @@ class Server
         void parseCommand(int fd, std::string str);
         void join_channel(int fd, std::string name);
         void send_channel_msg(int fd, std::string channelName, std::string msg);
+        void removeClientServ(int fd);
+        void part_channel(int fd, std::string channelName);
+        bool checkNickname(const std::string &name);
 };
 
 #endif
