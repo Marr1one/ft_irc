@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
+/*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:17:48 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/26 14:25:00 by marwan           ###   ########.fr       */
+/*   Updated: 2026/03/08 09:22:05 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ class Server
         void part_channel(int fd, std::string channelName);
         bool checkNickname(const std::string &name);
         void send_user_msg(int fd, std::string target,std::string msg);
+        void sendReply(int fd, const std::string &reply); //b
 };
 
 #endif

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
+/*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/23 17:15:29 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/27 21:32:11 by marwan           ###   ########.fr       */
+/*   Updated: 2026/03/08 09:10:36 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,26 @@ bool Client::is_registerable()const{return (_pass_ok && _nick_ok && _user_ok);}
 void Client::set_registered(bool b)
 {
    _registered = b;
+}
+void Client::appendBuffer(const std::string &data) //ajoute au buff ce qu on viens de recevoir
+{
+    _buffer += data;
+}
+bool Client::hasLine() const // verification si il a une ligne complete
+{
+    return (_buffer.find('\n') != std::string::npos);
+}
+std::string Client::extractLine() // Extrait et retourne la première ligne complète du buffer
+{
+    size_t pos = _buffer.find('\n');
+    if (pos == std::string::npos)
+        return "";
+
+    std::string line = _buffer.substr(0, pos);
+    _buffer = _buffer.substr(pos + 1); 
+    if (!line.empty() && line[line.size() - 1] == '\r')
+        line.erase(line.size() - 1);
+
 }
 
 

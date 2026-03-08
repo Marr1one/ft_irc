@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
+/*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:20:44 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/27 21:34:54 by marwan           ###   ########.fr       */
+/*   Updated: 2026/03/08 11:45:39 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,6 +104,11 @@ void Server::parseCommand(int fd, std::string str)
         std::cout << "PASS command\n";
         std::string password;
         ss >> password;
+        if (_clients[fd].get_registered())
+        {
+            sendReply(fd, ":ircserv 462 " + _clients[fd].get_nickname() + " :You may not reregister");
+            return;
+        }
         if (password == _password)
         {
             _clients[fd].set_pass(true);
@@ -114,8 +119,10 @@ void Server::parseCommand(int fd, std::string str)
                 std::cout << "Client is now registered!\n";
             }
         }
-        else std::cout <<"Password : Wrong\n";
-            
+        else {
+            std::cout <<"Password : Wrong\n";
+            sendReply(fd, ":ircserv 464 * :Password incorret");
+        }
     }
     else if (token == "NICK")
     {
@@ -208,19 +215,29 @@ void Server::acceptClient()
 void Server::receiveMessage(int i)
 {
     char buffer[1024];//jimagine qui faut checker si le message est pas trop long! faisable facile avec substr
-
+    int fd = _fds[i].fd;
     int bytes = recv(_fds[i].fd,buffer,sizeof(buffer) -1, 0);
     if (bytes <= 0)//-1 cest erreur nan ? 
     {
-        std::cout << "Client " << _fds[i].fd <<" disconnected\n";
+        std::cout << "Client " << fd << " disconnected\n";
         close(_fds[i].fd);
-        _fds.erase(_fds.begin()+i);
+        removeClientServ(fd);
         return;
     }
     buffer[bytes]='\0';
-    parseCommand(_fds[i].fd, buffer);
-    std::cout << "Message : " << buffer << std::endl;
-    
+    _clients[fd].appendBuffer(buffer);
+    while (_clients[fd].hasLine())
+    {
+        std::string line = _clients[fd].extractLine();
+        if (!line.empty())
+            parseCommand(fd, line);
+    }
+}
+
+void Server::sendReply(int fd, const std::string &reply)
+{
+    std::string msg = reply + "\r\n";
+    send(fd, msg.c_str(), msg.size(), 0);
 }
 
 void Server::start()

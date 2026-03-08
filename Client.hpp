@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marwan <marwan@student.42.fr>              +#+  +:+       +#+        */
+/*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/23 17:12:11 by marwan            #+#    #+#             */
-/*   Updated: 2026/02/27 21:32:42 by marwan           ###   ########.fr       */
+/*   Updated: 2026/03/08 09:22:23 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ class Client
         bool _pass_ok;
         bool _nick_ok;
         bool _user_ok;
-        
+        std::string _buffer; //b
     public:
         Client();
         Client(int fd);
@@ -41,6 +41,9 @@ class Client
         bool get_registered() const;
         bool is_registerable()const;
         void set_registered(bool b);
+        void        appendBuffer(const std::string &data); //b
+        std::string extractLine(); //b
+        bool        hasLine() const; //b
 };
 
 
