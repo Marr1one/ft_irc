@@ -6,7 +6,7 @@
 /*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:20:44 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/08 11:45:39 by braugust         ###   ########.fr       */
+/*   Updated: 2026/03/09 13:08:53 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,19 @@ bool Server::checkNickname(const std::string &nickname) //je crois quen fait un 
             return (false);
     }
     return (true);
+}
+
+bool Server::checkUsername(const std::string &username)
+{
+    std::cout << "Checking username: '" << username << "'\n";  // ← ajoute ça
+    for (std::map<int, Client>::iterator it = _clients.begin();
+         it != _clients.end(); it++)
+    {
+        std::cout << "Comparing with: '" << it->second.get_username() << "'\n";  // ← et ça
+        if (it->second.get_username() == username)
+            return false;
+    }
+    return true;
 }
 
 void Server::part_channel(int fd,  std::string channelName)
@@ -129,9 +142,14 @@ void Server::parseCommand(int fd, std::string str)
         std::cout << "NICK command\n";
         std::string nickname;
         ss >> nickname;
+        if (nickname.empty())
+        {
+            sendReply(fd, ":ircserv 431 * :No nickname given");
+            return;
+        }
         if (!checkNickname(nickname))
         {
-            std::cout << "Nickname already taken !\n";
+            sendReply(fd, ":ircserv 433 * " + nickname + " :Nickname is already in use"); 
             return;
         }
         _clients[fd].set_nickname(nickname);
@@ -140,7 +158,7 @@ void Server::parseCommand(int fd, std::string str)
         if (_clients[fd].is_registerable() && !_clients[fd].get_registered())
         {
             _clients[fd].set_registered(true);
-            std::cout << "Client is now registered!\n";
+            sendReply(fd, ":ircserv 001 " + nickname + " :Welcome to the IRC server " + nickname + "!");
         }
     }
     else if (token == "USER")
@@ -148,12 +166,24 @@ void Server::parseCommand(int fd, std::string str)
         std::cout << "USER command\n";
         std::string username;
         ss >> username;
-        _clients[fd].set_user(username); //verifier peut etre si cest pas deja pris ! 
+        if (username.empty())
+        {
+            sendReply(fd, ":ircserv 461 * USER :Not enough parameters");            
+            return;
+        }
+        if (!checkUsername(username))
+        {
+            sendReply(fd, ":ircserv 462 * :Username already in use");
+            return;
+        }
+        _clients[fd].set_user(username);
         _clients[fd].set_userOK(true);
         if (_clients[fd].is_registerable() && !_clients[fd].get_registered())
         {
             _clients[fd].set_registered(true);
             std::cout << "Client is now registered!\n";
+            std::string nick = _clients[fd].get_nickname();
+            sendReply(fd, ":ircserv 001 " + nick + " :Welcome to the IRC server " + nick + "!");
         }
     }
     else if (token=="JOIN")
@@ -196,6 +226,10 @@ void Server::parseCommand(int fd, std::string str)
         removeClientServ(fd);
         std::cout << "Client " << fd << " have been remove from all channels and his fd has been erase from the server.\n";
     }
+    else if (token == "KICK");
+    else if (token == "INVITE");
+    else if (token == "TOPIC");
+    else if (token == "MODE");
     else std::cout << "Unknow command\n";
 }
 

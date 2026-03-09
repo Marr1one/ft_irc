@@ -6,7 +6,7 @@
 /*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/23 17:15:29 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/08 09:10:36 by braugust         ###   ########.fr       */
+/*   Updated: 2026/03/09 12:47:33 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,8 +60,8 @@ std::string Client::extractLine() // Extrait et retourne la première ligne comp
     _buffer = _buffer.substr(pos + 1); 
     if (!line.empty() && line[line.size() - 1] == '\r')
         line.erase(line.size() - 1);
-
+    return (line);
 }
 
-
+std::string Client::get_username() const { return this->_username; }
 

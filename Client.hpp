@@ -6,7 +6,7 @@
 /*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/23 17:12:11 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/08 09:22:23 by braugust         ###   ########.fr       */
+/*   Updated: 2026/03/09 12:47:24 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ class Client
         bool get_registered() const;
         bool is_registerable()const;
         void set_registered(bool b);
+        std::string get_username() const; //b
         void        appendBuffer(const std::string &data); //b
         std::string extractLine(); //b
         bool        hasLine() const; //b
