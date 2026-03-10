@@ -6,7 +6,7 @@
 /*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/24 20:22:30 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/10 12:57:37 by braugust         ###   ########.fr       */
+/*   Updated: 2026/03/10 18:49:22 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,14 @@
 
 Channel::Channel():_name("Default channel"){};
 
-Channel::Channel(std::string name):_name(name){}
+Channel::Channel(const std::string &name)
+    : _name(name), _topic(""),
+      _invite_only(false),
+      _topic_restricted(false),
+      _key(""),
+      _user_limit(-1)
+{}
+// Channel::Channel(std::string name):_name(name){}
 
 void Channel::addClient(Client *client)
 {
@@ -25,7 +32,20 @@ void Channel::removeClient(int fd)
 {
     _channelClients.erase(fd);
 }
+bool Channel::isInviteOnly() const       { return _invite_only; }
+bool Channel::isTopicRestricted() const  { return _topic_restricted; }
+std::string Channel::getKey() const      { return _key; }
+int  Channel::getUserLimit() const       { return _user_limit; }
 
+void Channel::setInviteOnly(bool val)           { _invite_only = val; }
+void Channel::setTopicRestricted(bool val)      { _topic_restricted = val; }
+void Channel::setKey(const std::string &key)    { _key = key; }
+void Channel::setUserLimit(int limit)           { _user_limit = limit; }
+
+int Channel::getClientCount() const
+{
+    return (int)_channelClients.size();
+}
 std::string Channel::get_name()const{return this->_name;}
 
 void Channel::broadcast(int sender_fd, const std::string &msg)

@@ -6,7 +6,7 @@
 /*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:20:44 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/10 13:06:02 by braugust         ###   ########.fr       */
+/*   Updated: 2026/03/10 19:37:01 by braugust         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,31 +220,53 @@ void Server::parseCommand(int fd, std::string str)
             sendReply(fd, ":ircserv 001 " + nick + " :Welcome to the IRC server " + nick + "!");
         }
     }
-    else if (token=="JOIN")
+    else if (token == "JOIN")
     {
-        std::string channelName;
-        ss >> channelName;
+        std::string channelName, key;
+        ss >> channelName >> key;
+        std::string nick = _clients[fd].get_nickname();
         if (channelName.empty())
         {
-            sendReply(fd, ":ircserv 461 " + _clients[fd].get_nickname() + " JOIN :Not enough parameters");
+            sendReply(fd, ":ircserv 461 " + nick + " JOIN :Not enough parameters");
             return;
         }
         if (channelName[0] != '#')
         {
-            sendReply(fd, ":ircserv 403 " + _clients[fd].get_nickname() + " " + channelName + " :No such channel");
+            sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
             return;
         }
+        if (_channels.find(channelName) != _channels.end())
+        {
+            if (!_channels[channelName].getKey().empty() && key != _channels[channelName].getKey())
+            {
+                sendReply(fd, ":ircserv 475 " + nick + " " + channelName + " :Cannot join channel (+k)");
+                return;
+            }
+            if (_channels[channelName].isInviteOnly() && !_channels[channelName].isInvited(fd))
+            {
+                sendReply(fd, ":ircserv 473 " + nick + " " + channelName + " :Cannot join channel (+i)");
+                return;
+            }
+            if (_channels[channelName].getUserLimit() != -1
+                && _channels[channelName].getClientCount() >= _channels[channelName].getUserLimit())
+            {
+                sendReply(fd, ":ircserv 471 " + nick + " " + channelName + " :Cannot join channel (+l)");
+                return;
+            }
+        }
         join_channel(fd, channelName);
-        std::string nick = _clients[fd].get_nickname();
-        std::string joinMsg = ":" + nick + " @ircserv JOIN " + channelName + "\r\n";
+        std::string joinMsg = ":" + nick + "!" + nick + "@ircserv JOIN " + channelName + "\r\n";
         _channels[channelName].broadcast(-1, joinMsg);
         std::string topic = _channels[channelName].getTopic();
         if (topic.empty())
             sendReply(fd, ":ircserv 331 " + nick + " " + channelName + " :No topic is set");
         else
             sendReply(fd, ":ircserv 332 " + nick + " " + channelName + " :" + topic);
+
         sendReply(fd, ":ircserv 353 " + nick + " = " + channelName + " :" + _channels[channelName].getClientList());
         sendReply(fd, ":ircserv 366 " + nick + " " + channelName + " :End of /NAMES list");
+        if (_channels[channelName].isInvited(fd))
+            _channels[channelName].removeInvited(fd);
     }
     else if (token == "PRIVMSG")
     {
@@ -404,17 +426,132 @@ void Server::parseCommand(int fd, std::string str)
                 sendReply(fd, ":ircserv 332 " + nick + " " + channelName + " :" + topic);
             return;
         }
+        if (_channels[channelName].isTopicRestricted() && !_channels[channelName].isOperator(fd))
+        {
+            sendReply(fd, ":ircserv 482 " + nick + " " + channelName + " :You're not channel operator");
+            return;
+        }
         if (newTopic[0] == ' ') 
             newTopic = newTopic.substr(1);
         if (!newTopic.empty() && newTopic[0] == ':')
             newTopic = newTopic.substr(1);
-
         _channels[channelName].setTopic(newTopic);
         std::string topicMsg = ":" + nick + "@ircserv TOPIC "
                             + channelName + " :" + newTopic + "\r\n";
         _channels[channelName].broadcast(-1, topicMsg);
     }
-    else if (token == "MODE");
+    else if (token == "MODE")
+    {
+        std::string channelName, modeStr, param;
+        ss >> channelName >> modeStr >> param;
+        std::string nick = _clients[fd].get_nickname();
+        if (_channels.find(channelName) == _channels.end())
+        {
+            sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+            return;
+        }
+        if (!_channels[channelName].isOperator(fd))
+        {
+            sendReply(fd, ":ircserv 482 " + nick + " " + channelName + " :You're not channel operator");
+            return;
+        }
+        if (modeStr.empty() || (modeStr[0] != '+' && modeStr[0] != '-'))
+        {
+            sendReply(fd, ":ircserv 472 " + nick + " :Unknown mode");
+            return;
+        }
+        bool adding = (modeStr[0] == '+');
+        char mode   = modeStr[1];
+        if (mode == 'i')
+        {
+            _channels[channelName].setInviteOnly(adding);
+            std::string msg = ":" + nick  + " @ircserv MODE "
+                            + channelName + " " + modeStr + "\r\n";
+            _channels[channelName].broadcast(-1, msg);
+        }
+        else if (mode == 't')
+        {
+            _channels[channelName].setTopicRestricted(adding);
+            std::string msg = ":" + nick + " @ircserv MODE "
+                            + channelName + " " + modeStr + "\r\n";
+            _channels[channelName].broadcast(-1, msg);
+        }
+        else if (mode == 'k')
+        {
+            if (adding)
+            {
+                if (param.empty())
+                {
+                    sendReply(fd, ":ircserv 461 " + nick + " MODE :Not enough parameters");
+                    return;
+                }
+                _channels[channelName].setKey(param);
+            }
+            else
+                _channels[channelName].setKey("");  // supprimer le password
+
+            std::string msg = ":" + nick  + " @ircserv MODE "
+                            + channelName + " " + modeStr + "\r\n";
+            if (adding) msg += " " + param;
+            _channels[channelName].broadcast(-1, msg);
+        }
+        else if (mode == 'o')
+        {
+            if (param.empty())
+            {
+                sendReply(fd, ":ircserv 461 " + nick + " MODE :Not enough parameters");
+                return;
+            }
+            int targetFd = findClientByNick(param);
+            if (targetFd == -1)
+            {
+                sendReply(fd, ":ircserv 401 " + nick + " " + param + " :No such nick");
+                return;
+            }
+            if (!_channels[channelName].hasClient(targetFd))
+            {
+                sendReply(fd, ":ircserv 441 " + nick + " " + param + " " + channelName + " :They aren't on that channel");
+                return;
+            }
+            if (adding)
+                _channels[channelName].addOperator(targetFd);
+            else
+                _channels[channelName].removeOperator(targetFd);
+
+            std::string msg = ":" + nick + " @ircserv MODE "
+                            + channelName + " " + modeStr + " " + param + "\r\n";
+            _channels[channelName].broadcast(-1, msg);
+        }
+        else if (mode == 'l')
+        {
+            if (adding)
+            {
+                if (param.empty())
+                {
+                    sendReply(fd, ":ircserv 461 " + nick + " MODE :Not enough parameters");
+                    return;
+                }
+                int limit = atoi(param.c_str());
+                if (limit <= 0)
+                {
+                    sendReply(fd, ":ircserv 461 " + nick + " MODE :Invalid limit");
+                    return;
+                }
+                _channels[channelName].setUserLimit(limit);
+            }
+            else
+                _channels[channelName].setUserLimit(-1);
+
+            std::string msg = ":" + nick + "@ircserv MODE "
+                            + channelName + " " + modeStr + "\r\n";
+            if (adding) msg += " " + param;
+            _channels[channelName].broadcast(-1, msg);
+        }
+        else
+        {
+            sendReply(fd, ":ircserv 472 " + nick + " " + modeStr + " :Unknown mode char");
+        }
+    }
     else std::cout << "Unknow command\n";
 }
 
