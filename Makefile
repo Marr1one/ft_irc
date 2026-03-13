@@ -10,7 +10,7 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME = irc
+NAME = ircserv
 
 SRC = main.cpp Server.cpp Client.cpp Channel.cpp
 
