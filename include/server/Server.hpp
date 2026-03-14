@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:17:48 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/14 22:08:50 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/14 23:30:58 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,11 @@
 #include <cerrno>
 #include <cstdlib>
 #include <stdexcept>
+#include <unistd.h>
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <poll.h>
 
 #include "Client.hpp"
 #include "Channel.hpp"
@@ -32,6 +37,7 @@ class Server {
 
     typedef std::vector<pollfd>::iterator PollFdIt;
     typedef std::map<int, Client>::iterator ClientIt;
+    typedef std::map<int, Client>::const_iterator ConstClientIt;
     typedef std::map<std::string, Channel>::iterator ChannelIt;
     typedef std::map<std::string, CommandFn>::iterator HandlerIt;
 
