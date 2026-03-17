@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: braugust <braugust@student.42.fr>          +#+  +:+       +#+        */
+/*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:16:22 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/10 10:53:48 by braugust         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:16:08 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 
 int main(int argc, char **argv)
 {
-    if(argc!=3)return (std::cerr<<"Usage: ./irc port password\n",1);
+    if(argc!=3)return (std::cerr<<"Usage: ./ircserv port password\n",1);
     try
     {
         Server server(argv[1], argv[2]);
