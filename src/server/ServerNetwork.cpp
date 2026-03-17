@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 22:29:05 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 14:06:17 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 14:43:09 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,4 +73,32 @@ void Server::removeClientFromPoll(int fd) {
 			return;
 		}
 	}
+}
+
+void Server::sendChannelMsg(int fd, const std::string &channelName, const std::string &msg)
+{
+    if (_channels.find(channelName) == _channels.end())
+        std::cout << "Channel name not found!\n";
+    else
+        _channels[channelName].broadcast(fd, msg);
+}
+
+void Server::sendUserMsg(int fd, const std::string &target, const std::string &msg)
+{
+    (void)fd;
+    for(ClientIt it = _clients.begin(); it != _clients.end(); it++)
+    {
+        if (it->second.get_nickname()==target)
+        {
+            send(it->second.get_fd(), msg.c_str(), msg.size(), 0);
+            return ;
+        }
+    }
+    std::cout << "User not found!\n";
+}
+
+void Server::sendReply(int fd, const std::string &reply)
+{
+    std::string msg = reply + "\r\n";
+    send(fd, msg.c_str(), msg.size(), 0);
 }
