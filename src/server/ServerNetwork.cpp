@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 22:29:05 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 16:30:23 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:01:47 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,11 @@
 void Server::acceptClient() {
 	int client_fd = accept(_serverFd, NULL, NULL);
 	if (client_fd < 0)
-		return; // ptet ajouter un message derreur
+		return;
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0) {
+		close(client_fd);
+		return;
+	}
 	pollfd newClient;
 	newClient.fd = client_fd;
 	newClient.events = POLLIN;
@@ -31,7 +35,16 @@ void Server::receiveMessage(int i) {
 	int fd = _fds[i].fd;
 	int bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
 
-	if (bytes <= 0) {
+	if (bytes < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		std::cout << "Client " << fd << " disconnected\n";
+		close(fd);
+		removeClient(fd);
+		return;
+	}
+
+	if (bytes == 0) {
 		std::cout << "Client " << fd << " disconnected\n";
 		close(fd);
 		removeClient(fd);
@@ -52,6 +65,33 @@ void Server::receiveMessage(int i) {
 
 		handleMessage(fd, msg);
 	}
+}
+
+void Server::flushPendingWrites(int fd) {
+	ClientIt clientIt = _clients.find(fd);
+
+	if (clientIt == _clients.end())
+		return;
+	if (!clientIt->second.hasPendingOutput()) {
+		updatePollEvents(fd);
+		return;
+	}
+
+	const std::string &buffer = clientIt->second.getOutputBuffer();
+	ssize_t sent = send(fd, buffer.c_str(), buffer.size(), 0);
+
+	if (sent < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		close(fd);
+		removeClient(fd);
+		return;
+	}
+	if (sent == 0)
+		return;
+
+	clientIt->second.consumeOutput(static_cast<size_t>(sent));
+	updatePollEvents(fd);
 }
 
 void Server::removeClient(int fd) {
@@ -75,12 +115,34 @@ void Server::removeClientFromPoll(int fd) {
 	}
 }
 
+void Server::updatePollEvents(int fd) {
+	for (PollFdIt it = _fds.begin(); it != _fds.end(); ++it) {
+		if (it->fd == fd) {
+			it->events = POLLIN;
+			if (_clients.find(fd) != _clients.end() &&
+				_clients[fd].hasPendingOutput())
+				it->events |= POLLOUT;
+			return;
+		}
+	}
+}
+
 void Server::sendChannelMsg(int fd, const std::string &channelName,
 							const std::string &msg) {
 	if (_channels.find(channelName) == _channels.end())
 		std::cout << "Channel name not found!\n";
-	else
-		_channels[channelName].broadcast(fd, msg);
+	else {
+		std::vector<int> clients = _channels[channelName].getClientFds();
+		for (std::vector<int>::iterator it = clients.begin();
+			 it != clients.end(); ++it) {
+			if (*it == fd)
+				continue;
+			if (_clients.find(*it) == _clients.end())
+				continue;
+			_clients[*it].queueOutput(msg);
+			updatePollEvents(*it);
+		}
+	}
 }
 
 void Server::sendUserMsg(int fd, const std::string &target,
@@ -88,7 +150,8 @@ void Server::sendUserMsg(int fd, const std::string &target,
 	(void)fd;
 	for (ClientIt it = _clients.begin(); it != _clients.end(); it++) {
 		if (it->second.get_nickname() == target) {
-			send(it->second.get_fd(), msg.c_str(), msg.size(), 0);
+			it->second.queueOutput(msg);
+			updatePollEvents(it->second.get_fd());
 			return;
 		}
 	}
@@ -97,5 +160,9 @@ void Server::sendUserMsg(int fd, const std::string &target,
 
 void Server::sendReply(int fd, const std::string &reply) {
 	std::string msg = reply + "\r\n";
-	send(fd, msg.c_str(), msg.size(), 0);
+
+	if (_clients.find(fd) == _clients.end())
+		return;
+	_clients[fd].queueOutput(msg);
+	updatePollEvents(fd);
 }
