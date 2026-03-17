@@ -57,6 +57,7 @@ class Channel {
 	void setKey(const std::string &key);
 	void setUserLimit(int limit);
 	int getClientCount() const;
+	std::vector<int> getClientFds() const;
 };
 
 #endif

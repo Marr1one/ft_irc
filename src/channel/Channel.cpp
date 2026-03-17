@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 21:54:58 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 14:29:32 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:16:03 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,15 @@ void Channel::setUserLimit(int limit) { _user_limit = limit; }
 
 int Channel::getClientCount() const { return (int)_channelClients.size(); }
 std::string Channel::get_name() const { return this->_name; }
+
+std::vector<int> Channel::getClientFds() const {
+	std::vector<int> clients;
+
+	for (std::map<int, Client *>::const_iterator it = _channelClients.begin();
+		 it != _channelClients.end(); ++it)
+		clients.push_back(it->first);
+	return clients;
+}
 
 void Channel::broadcast(int sender_fd, const std::string &msg) {
 	for (std::map<int, Client *>::iterator it = _channelClients.begin();
