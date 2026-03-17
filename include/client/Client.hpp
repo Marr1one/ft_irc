@@ -24,7 +24,8 @@ class Client {
 	bool _pass_ok;
 	bool _nick_ok;
 	bool _user_ok;
-	std::string _buffer; // b
+	std::string _buffer;
+	std::string _outBuffer;
 
   public:
 	Client();
@@ -41,10 +42,14 @@ class Client {
 	bool get_registered() const;
 	bool is_registerable() const;
 	void set_registered(bool b);
-	std::string get_username() const;			// b
-	void appendBuffer(const std::string &data); // b
-	std::string extractLine();					// b
-	bool hasLine() const;						// b
+	std::string get_username() const;
+	void appendBuffer(const std::string &data);
+	std::string extractLine();
+	bool hasLine() const;
+	void queueOutput(const std::string &data);
+	const std::string &getOutputBuffer() const;
+	void consumeOutput(size_t count);
+	bool hasPendingOutput() const;
 };
 
 #endif

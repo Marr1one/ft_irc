@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 21:55:03 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 14:29:24 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:15:54 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,3 +71,11 @@ std::string Client::extractLine() // Extrait et retourne la première ligne
 }
 
 std::string Client::get_username() const { return this->_username; }
+
+void Client::queueOutput(const std::string &data) { _outBuffer += data; }
+
+const std::string &Client::getOutputBuffer() const { return _outBuffer; }
+
+void Client::consumeOutput(size_t count) { _outBuffer.erase(0, count); }
+
+bool Client::hasPendingOutput() const { return !_outBuffer.empty(); }
