@@ -24,8 +24,9 @@ void Server::handleUser(int fd, const Message &msg) {
 	Client &client = _clients[fd];
 	const std::string &username = msg.params[0];
 
-	if (!checkUsername(username)) {
-		sendReply(fd, ":ircserv 462 * :Username already in use");
+	if (client.get_registered()) {
+		sendReply(fd, ":ircserv 462 " + client.get_nickname() +
+						  " :You may not reregister");
 		return;
 	}
 
