@@ -6,7 +6,7 @@
 #    By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/22 23:44:43 by marwan            #+#    #+#              #
-#    Updated: 2026/03/17 12:05:37 by esouhail         ###   ########.fr        #
+#    Updated: 2026/03/17 16:31:23 by esouhail         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -42,6 +42,8 @@ SRCS = $(SRCDIR)/main.cpp \
 	   $(COMMANDDIR)/Invite.cpp \
 	   $(COMMANDDIR)/Topic.cpp \
 	   $(COMMANDDIR)/Mode.cpp \
+	   $(COMMANDDIR)/Cap.cpp \
+	   $(COMMANDDIR)/Ping.cpp \
 	   $(CLIENTDIR)/Client.cpp \
 	   $(CHANNELDIR)/Channel.cpp
 
