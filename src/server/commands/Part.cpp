@@ -11,7 +11,29 @@
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include "Message.hpp"
 
 void Server::handlePart(int fd, const Message &msg) {
-	// TO-DO
+	Client &client = _clients[fd];
+	const std::string nick = client.get_nickname();
+
+	if (msg.params.empty()) {
+		sendReply(fd, ":ircserv 461 " + nick + " PART :Not enough parameters");
+		return;
+	}
+
+	const std::string channelName = msg.params[0];
+
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+		return;
+	}
+	if (!_channels[channelName].hasClient(fd)) {
+		sendReply(fd, ":ircserv 442 " + nick + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	const std::string partMsg = ":" + nick + "!" + nick + "@ircserv PART " + channelName + "\r\n";
+	_channels[channelName].broadcast(-1, partMsg);
+	partChannel(fd, channelName);
 }
