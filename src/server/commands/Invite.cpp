@@ -6,19 +6,20 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:04:11 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/14 19:09:22 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:03:27 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
 #include "Message.hpp"
+#include "Server.hpp"
 
 void Server::handleInvite(int fd, const Message &msg) {
 	Client &client = _clients[fd];
 	const std::string nick = client.get_nickname();
 
 	if (msg.params.size() < 2) {
-		sendReply(fd, ":ircserv 461 " + nick + " INVITE :Not enough parameters");
+		sendReply(fd,
+				  ":ircserv 461 " + nick + " INVITE :Not enough parameters");
 		return;
 	}
 
@@ -26,11 +27,18 @@ void Server::handleInvite(int fd, const Message &msg) {
 	const std::string channelName = msg.params[1];
 
 	if (_channels.find(channelName) == _channels.end()) {
-		sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+		sendReply(fd, ":ircserv 403 " + nick + " " + channelName +
+						  " :No such channel");
+		return;
+	}
+	if (!_channels[channelName].hasClient(fd)) {
+		sendReply(fd, ":ircserv 442 " + nick + " " + channelName +
+						  " :You're not on that channel");
 		return;
 	}
 	if (!_channels[channelName].isOperator(fd)) {
-		sendReply(fd, ":ircserv 482 " + nick + " " + channelName + " :You're not channel operator");
+		sendReply(fd, ":ircserv 482 " + nick + " " + channelName +
+						  " :You're not channel operator");
 		return;
 	}
 
@@ -40,13 +48,14 @@ void Server::handleInvite(int fd, const Message &msg) {
 		return;
 	}
 	if (_channels[channelName].hasClient(targetFd)) {
-		sendReply(fd, ":ircserv 443 " + nick + " " + target + " " + channelName + " :is already on channel");
+		sendReply(fd, ":ircserv 443 " + nick + " " + target + " " +
+						  channelName + " :is already on channel");
 		return;
 	}
 
 	_channels[channelName].addInvited(targetFd);
-	const std::string inviteMsg = ":" + nick + "!" + nick + "@ircserv INVITE "
-		+ target + " :" + channelName + "\r\n";
-	sendReply(targetFd, inviteMsg.substr(0, inviteMsg.size() - 2));
+	const std::string inviteMsg = ":" + nick + "!" + nick + "@ircserv INVITE " +
+								  target + " :" + channelName;
+	sendReply(targetFd, inviteMsg);
 	sendReply(fd, ":ircserv 341 " + nick + " " + target + " " + channelName);
 }
