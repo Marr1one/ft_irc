@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 21:54:37 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/14 23:36:23 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 14:57:47 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,4 +62,39 @@ bool Server::checkUsername(const std::string &username) const {
             return (false);
     }
     return (true);
+}
+
+bool Server::canFinishRegistration(const Client &client) const
+{
+    return (client.is_registerable());
+}
+
+void Server::joinChannel(int fd, const std::string &name)
+{
+	bool isNew = (_channels.find(name) == _channels.end());
+
+	if (isNew)
+		_channels[name] = Channel(name);
+
+	Client *client = &_clients[fd];
+	_channels[name].addClient(client);
+	if (isNew)
+		_channels[name].addOperator(fd);
+
+	std::cout << "Client " << fd << " joined channel : " << name;
+	if (isNew)
+		std::cout << " (created, operator)";
+	std::cout << std::endl;
+}
+
+void Server::partChannel(int fd, const std::string &name)
+{
+	ChannelIt it = _channels.find(name);
+
+	if (it == _channels.end())
+		return;
+
+	it->second.removeClient(fd);
+	it->second.removeOperator(fd);
+	it->second.removeInvited(fd);
 }

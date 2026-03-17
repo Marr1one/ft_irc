@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:17:48 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/15 00:05:34 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 14:57:04 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <vector>
 #include <poll.h>
 #include <cerrno>
+#include <csignal>
 #include <cstdlib>
 #include <stdexcept>
 #include <unistd.h>
@@ -67,6 +68,7 @@ class Server {
     bool checkNickname(const std::string &nickname) const;
     bool checkUsername(const std::string &username) const;
     int findClientByNick(const std::string &nick) const;
+    bool canFinishRegistration(const Client &client) const;
 
     void joinChannel(int fd, const std::string &name);
     void partChannel(int fd, const std::string &name);
