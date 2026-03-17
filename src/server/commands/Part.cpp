@@ -6,12 +6,12 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:04:22 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/14 19:09:22 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:02:59 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
 #include "Message.hpp"
+#include "Server.hpp"
 
 void Server::handlePart(int fd, const Message &msg) {
 	Client &client = _clients[fd];
@@ -25,15 +25,18 @@ void Server::handlePart(int fd, const Message &msg) {
 	const std::string channelName = msg.params[0];
 
 	if (_channels.find(channelName) == _channels.end()) {
-		sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+		sendReply(fd, ":ircserv 403 " + nick + " " + channelName +
+						  " :No such channel");
 		return;
 	}
 	if (!_channels[channelName].hasClient(fd)) {
-		sendReply(fd, ":ircserv 442 " + nick + " " + channelName + " :You're not on that channel");
+		sendReply(fd, ":ircserv 442 " + nick + " " + channelName +
+						  " :You're not on that channel");
 		return;
 	}
 
-	const std::string partMsg = ":" + nick + "!" + nick + "@ircserv PART " + channelName + "\r\n";
-	_channels[channelName].broadcast(-1, partMsg);
+	const std::string partMsg =
+		":" + nick + "!" + nick + "@ircserv PART " + channelName + "\r\n";
+	sendChannelMsg(-1, channelName, partMsg);
 	partChannel(fd, channelName);
 }

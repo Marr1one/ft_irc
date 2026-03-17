@@ -6,12 +6,12 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:04:16 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/14 19:09:22 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:03:16 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
 #include "Message.hpp"
+#include "Server.hpp"
 
 void Server::handleKick(int fd, const Message &msg) {
 	Client &client = _clients[fd];
@@ -26,11 +26,13 @@ void Server::handleKick(int fd, const Message &msg) {
 	const std::string target = msg.params[1];
 
 	if (_channels.find(channelName) == _channels.end()) {
-		sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+		sendReply(fd, ":ircserv 403 " + nick + " " + channelName +
+						  " :No such channel");
 		return;
 	}
 	if (!_channels[channelName].isOperator(fd)) {
-		sendReply(fd, ":ircserv 482 " + nick + " " + channelName + " :You're not channel operator");
+		sendReply(fd, ":ircserv 482 " + nick + " " + channelName +
+						  " :You're not channel operator");
 		return;
 	}
 
@@ -40,13 +42,14 @@ void Server::handleKick(int fd, const Message &msg) {
 		return;
 	}
 	if (!_channels[channelName].hasClient(targetFd)) {
-		sendReply(fd, ":ircserv 441 " + nick + " " + target + " " + channelName + " :They aren't on that channel");
+		sendReply(fd, ":ircserv 441 " + nick + " " + target + " " +
+						  channelName + " :They aren't on that channel");
 		return;
 	}
 
-	const std::string kickMsg = ":" + nick + "!" + nick + "@ircserv KICK "
-		+ channelName + " " + target + "\r\n";
-	_channels[channelName].broadcast(-1, kickMsg);
+	const std::string kickMsg = ":" + nick + "!" + nick + "@ircserv KICK " +
+								channelName + " " + target + "\r\n";
+	sendChannelMsg(-1, channelName, kickMsg);
 	_channels[channelName].removeClient(targetFd);
 	_channels[channelName].removeOperator(targetFd);
 }

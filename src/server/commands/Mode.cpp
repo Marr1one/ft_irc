@@ -6,12 +6,12 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:04:18 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/14 19:09:22 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:03:08 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
 #include "Message.hpp"
+#include "Server.hpp"
 
 void Server::handleMode(int fd, const Message &msg) {
 	Client &client = _clients[fd];
@@ -27,11 +27,18 @@ void Server::handleMode(int fd, const Message &msg) {
 	const std::string param = (msg.params.size() > 2) ? msg.params[2] : "";
 
 	if (_channels.find(channelName) == _channels.end()) {
-		sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+		sendReply(fd, ":ircserv 403 " + nick + " " + channelName +
+						  " :No such channel");
+		return;
+	}
+	if (!_channels[channelName].hasClient(fd)) {
+		sendReply(fd, ":ircserv 442 " + nick + " " + channelName +
+						  " :You're not on that channel");
 		return;
 	}
 	if (!_channels[channelName].isOperator(fd)) {
-		sendReply(fd, ":ircserv 482 " + nick + " " + channelName + " :You're not channel operator");
+		sendReply(fd, ":ircserv 482 " + nick + " " + channelName +
+						  " :You're not channel operator");
 		return;
 	}
 	if (modeStr.size() < 2 || (modeStr[0] != '+' && modeStr[0] != '-')) {
@@ -45,45 +52,55 @@ void Server::handleMode(int fd, const Message &msg) {
 
 	if (mode == 'i') {
 		_channels[channelName].setInviteOnly(adding);
-		modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + "\r\n";
+		modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+				  " " + modeStr + "\r\n";
 	} else if (mode == 't') {
 		_channels[channelName].setTopicRestricted(adding);
-		modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + "\r\n";
+		modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+				  " " + modeStr + "\r\n";
 	} else if (mode == 'k') {
 		if (adding) {
 			if (param.empty()) {
-				sendReply(fd, ":ircserv 461 " + nick + " MODE :Not enough parameters");
+				sendReply(fd, ":ircserv 461 " + nick +
+								  " MODE :Not enough parameters");
 				return;
 			}
 			_channels[channelName].setKey(param);
-			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + " " + param + "\r\n";
+			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+					  " " + modeStr + " " + param + "\r\n";
 		} else {
 			_channels[channelName].setKey("");
-			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + "\r\n";
+			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+					  " " + modeStr + "\r\n";
 		}
 	} else if (mode == 'o') {
 		if (param.empty()) {
-			sendReply(fd, ":ircserv 461 " + nick + " MODE :Not enough parameters");
+			sendReply(fd,
+					  ":ircserv 461 " + nick + " MODE :Not enough parameters");
 			return;
 		}
 		const int targetFd = findClientByNick(param);
 		if (targetFd == -1) {
-			sendReply(fd, ":ircserv 401 " + nick + " " + param + " :No such nick");
+			sendReply(fd,
+					  ":ircserv 401 " + nick + " " + param + " :No such nick");
 			return;
 		}
 		if (!_channels[channelName].hasClient(targetFd)) {
-			sendReply(fd, ":ircserv 441 " + nick + " " + param + " " + channelName + " :They aren't on that channel");
+			sendReply(fd, ":ircserv 441 " + nick + " " + param + " " +
+							  channelName + " :They aren't on that channel");
 			return;
 		}
 		if (adding)
 			_channels[channelName].addOperator(targetFd);
 		else
 			_channels[channelName].removeOperator(targetFd);
-		modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + " " + param + "\r\n";
+		modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+				  " " + modeStr + " " + param + "\r\n";
 	} else if (mode == 'l') {
 		if (adding) {
 			if (param.empty()) {
-				sendReply(fd, ":ircserv 461 " + nick + " MODE :Not enough parameters");
+				sendReply(fd, ":ircserv 461 " + nick +
+								  " MODE :Not enough parameters");
 				return;
 			}
 			const int limit = std::atoi(param.c_str());
@@ -92,15 +109,18 @@ void Server::handleMode(int fd, const Message &msg) {
 				return;
 			}
 			_channels[channelName].setUserLimit(limit);
-			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + " " + param + "\r\n";
+			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+					  " " + modeStr + " " + param + "\r\n";
 		} else {
 			_channels[channelName].setUserLimit(-1);
-			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName + " " + modeStr + "\r\n";
+			modeMsg = ":" + nick + "!" + nick + "@ircserv MODE " + channelName +
+					  " " + modeStr + "\r\n";
 		}
 	} else {
-		sendReply(fd, ":ircserv 472 " + nick + " " + modeStr + " :Unknown mode char");
+		sendReply(fd, ":ircserv 472 " + nick + " " + modeStr +
+						  " :Unknown mode char");
 		return;
 	}
 
-	_channels[channelName].broadcast(-1, modeMsg);
+	sendChannelMsg(-1, channelName, modeMsg);
 }

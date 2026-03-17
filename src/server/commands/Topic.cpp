@@ -6,12 +6,12 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:04:35 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/14 19:09:22 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/17 21:02:03 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
 #include "Message.hpp"
+#include "Server.hpp"
 
 void Server::handleTopic(int fd, const Message &msg) {
 	Client &client = _clients[fd];
@@ -24,30 +24,36 @@ void Server::handleTopic(int fd, const Message &msg) {
 
 	const std::string channelName = msg.params[0];
 	if (_channels.find(channelName) == _channels.end()) {
-		sendReply(fd, ":ircserv 403 " + nick + " " + channelName + " :No such channel");
+		sendReply(fd, ":ircserv 403 " + nick + " " + channelName +
+						  " :No such channel");
 		return;
 	}
 	if (!_channels[channelName].hasClient(fd)) {
-		sendReply(fd, ":ircserv 442 " + nick + " " + channelName + " :You're not on that channel");
+		sendReply(fd, ":ircserv 442 " + nick + " " + channelName +
+						  " :You're not on that channel");
 		return;
 	}
 
 	if (!msg.hasTrailing) {
 		const std::string topic = _channels[channelName].getTopic();
 		if (topic.empty())
-			sendReply(fd, ":ircserv 331 " + nick + " " + channelName + " :No topic is set");
+			sendReply(fd, ":ircserv 331 " + nick + " " + channelName +
+							  " :No topic is set");
 		else
-			sendReply(fd, ":ircserv 332 " + nick + " " + channelName + " :" + topic);
+			sendReply(fd, ":ircserv 332 " + nick + " " + channelName + " :" +
+							  topic);
 		return;
 	}
 
-	if (_channels[channelName].isTopicRestricted() && !_channels[channelName].isOperator(fd)) {
-		sendReply(fd, ":ircserv 482 " + nick + " " + channelName + " :You're not channel operator");
+	if (_channels[channelName].isTopicRestricted() &&
+		!_channels[channelName].isOperator(fd)) {
+		sendReply(fd, ":ircserv 482 " + nick + " " + channelName +
+						  " :You're not channel operator");
 		return;
 	}
 
 	_channels[channelName].setTopic(msg.trailing);
-	const std::string topicMsg = ":" + nick + "!" + nick + "@ircserv TOPIC "
-		+ channelName + " :" + msg.trailing + "\r\n";
-	_channels[channelName].broadcast(-1, topicMsg);
+	const std::string topicMsg = ":" + nick + "!" + nick + "@ircserv TOPIC " +
+								 channelName + " :" + msg.trailing + "\r\n";
+	sendChannelMsg(-1, channelName, topicMsg);
 }
