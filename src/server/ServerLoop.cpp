@@ -1,0 +1,52 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ServerLoop.cpp                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/03/17 14:28:04 by esouhail          #+#    #+#             */
+/*   Updated: 2026/03/17 14:33:55 by esouhail         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "Server.hpp"
+
+void Server::start() {
+	_serverFd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_serverFd < 0)
+		throw std::runtime_error("socket failed\n");
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(_port);
+	addr.sin_addr.s_addr = INADDR_ANY;
+	if (bind(_serverFd, (const sockaddr *)&addr, sizeof(addr)) < 0)
+		throw std::runtime_error("Bind error\n");
+	if (listen(_serverFd, SOMAXCONN) < 0)
+		throw std::runtime_error("Listen error\n");
+	pollfd server_poll;
+	server_poll.fd = _serverFd;
+	server_poll.events = POLLIN;
+	server_poll.revents = 0;
+	_fds.push_back(server_poll);
+	signal(SIGINT, Server::signalHandler);
+	signal(SIGQUIT, Server::signalHandler);
+	std::cout << "Server listening on port " << _port << std::endl;
+	while (_running) {
+		if (poll(&_fds[0], _fds.size(), -1) < 0) // ← un seul appel
+		{
+			if (!_running)
+				break; // signal reçu → sortie propre
+			throw std::runtime_error("poll error\n");
+		}
+		for (size_t i = 0; i < _fds.size(); i++) {
+			if (_fds[i].revents & POLLIN) {
+				if (_fds[i].fd == _serverFd)
+					acceptClient();
+				else
+					receiveMessage(i);
+			}
+		}
+	}
+	close(_serverFd);
+}
