@@ -6,7 +6,7 @@
 #    By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/22 23:44:43 by marwan            #+#    #+#              #
-#    Updated: 2026/03/17 16:31:23 by esouhail         ###   ########.fr        #
+#    Updated: 2026/03/18 23:35:52 by esouhail         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,6 +27,7 @@ MESSAGEINCDIR = $(INCDIR)/message
 
 SRCS = $(SRCDIR)/main.cpp \
 	   $(SERVERDIR)/Server.cpp \
+	   $(SERVERDIR)/BlackjackGame.cpp \
 	   $(SERVERDIR)/ServerNetwork.cpp \
 	   $(SERVERDIR)/ServerLoop.cpp \
 	   $(SERVERDIR)/CommandHandler.cpp \
@@ -36,6 +37,7 @@ SRCS = $(SRCDIR)/main.cpp \
 	   $(COMMANDDIR)/User.cpp \
 	   $(COMMANDDIR)/Join.cpp \
 	   $(COMMANDDIR)/Privmsg.cpp \
+	   $(COMMANDDIR)/Blackjack.cpp \
 	   $(COMMANDDIR)/Part.cpp \
 	   $(COMMANDDIR)/Quit.cpp \
 	   $(COMMANDDIR)/Kick.cpp \
