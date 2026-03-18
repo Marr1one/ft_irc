@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:00:51 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/15 00:06:53 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/19 00:30:27 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ void Server::initCommandHandlers() {
 	_handlers["USER"] = &Server::handleUser;
 	_handlers["JOIN"] = &Server::handleJoin;
 	_handlers["PRIVMSG"] = &Server::handlePrivmsg;
+	_handlers["BLACKJACK"] = &Server::handleBlackjack;
 	_handlers["PART"] = &Server::handlePart;
 	_handlers["QUIT"] = &Server::handleQuit;
 	_handlers["KICK"] = &Server::handleKick;
