@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:17:48 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/17 21:03:46 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/19 13:20:35 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "BlackjackGame.hpp"
 #include "Channel.hpp"
 #include "Client.hpp"
 
@@ -49,6 +50,7 @@ class Server {
 	std::map<int, Client> _clients;
 	std::map<std::string, Channel> _channels;
 	std::map<std::string, CommandFn> _handlers;
+	std::map<int, BlackjackGame> _blackjackGames;
 
 	static bool _running;
 
@@ -81,6 +83,7 @@ class Server {
 	void handleUser(int fd, const Message &msg);
 	void handleJoin(int fd, const Message &msg);
 	void handlePrivmsg(int fd, const Message &msg);
+	void handleBlackjack(int fd, const Message &msg);
 	void handlePart(int fd, const Message &msg);
 	void handleQuit(int fd, const Message &msg);
 	void handleKick(int fd, const Message &msg);

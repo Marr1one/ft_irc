@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 22:29:05 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 21:01:47 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/19 13:20:21 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,6 +103,7 @@ void Server::removeClient(int fd) {
 		it->second.removeInvited(fd);
 	}
 
+	_blackjackGames.erase(fd);
 	_clients.erase(fd);
 }
 
