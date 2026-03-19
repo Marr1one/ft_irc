@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 19:00:51 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/19 00:30:27 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/19 16:49:03 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,11 @@ void Server::handleMessage(int fd, const Message &msg) {
 
 	HandlerIt it = _handlers.find(msg.command);
 	if (it == _handlers.end()) {
-		// TO-DO: send 421 for unkown command for irssi
-		std::cout << "Unknown command: " << msg.command << std::endl;
+		const std::string nick = clientIt->second.get_nickname().empty()
+									 ? "*"
+									 : clientIt->second.get_nickname();
+		sendReply(fd, ":ircserv 421 " + nick + " " + msg.command +
+						" :Unknown command");
 		return;
 	}
 
