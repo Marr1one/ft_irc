@@ -6,18 +6,19 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/14 21:54:37 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 14:57:47 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/21 13:47:01 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-bool Server::_running = true;
+volatile sig_atomic_t Server::_running = 1;
 
 Server::Server(char *port, char *password)
 	: _port(0), _password(password), _serverFd(-1) {
 	char *end = NULL;
 
+	_running = 1;
 	errno = 0;
 	long value = std::strtol(port, &end, 10);
 
@@ -30,11 +31,24 @@ Server::Server(char *port, char *password)
 	initCommandHandlers();
 }
 
-Server::~Server() {}
+Server::~Server() { shutdown(); }
 
 void Server::signalHandler(int signal) {
 	(void)signal;
-	_running = false;
+	_running = 0;
+}
+
+void Server::shutdown() {
+	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();
+		 ++it) {
+		if (it->fd >= 0)
+			close(it->fd);
+	}
+	_fds.clear();
+	_clients.clear();
+	_channels.clear();
+	_blackjackGames.clear();
+	_serverFd = -1;
 }
 
 int Server::findClientByNick(const std::string &nick) const {
@@ -46,31 +60,26 @@ int Server::findClientByNick(const std::string &nick) const {
 }
 
 bool Server::checkNickname(const std::string &nickname) const {
-    for(ConstClientIt it = _clients.begin(); it != _clients.end();it++)
-    {
-        if(it->second.get_nickname() == nickname)
-            return (false);
-    }
-    return (true);
+	for (ConstClientIt it = _clients.begin(); it != _clients.end(); it++) {
+		if (it->second.get_nickname() == nickname)
+			return (false);
+	}
+	return (true);
 }
 
 bool Server::checkUsername(const std::string &username) const {
-    for (ConstClientIt it = _clients.begin();
-         it != _clients.end(); it++)
-    {
-        if (it->second.get_username() == username)
-            return (false);
-    }
-    return (true);
+	for (ConstClientIt it = _clients.begin(); it != _clients.end(); it++) {
+		if (it->second.get_username() == username)
+			return (false);
+	}
+	return (true);
 }
 
-bool Server::canFinishRegistration(const Client &client) const
-{
-    return (client.is_registerable());
+bool Server::canFinishRegistration(const Client &client) const {
+	return (client.is_registerable());
 }
 
-void Server::joinChannel(int fd, const std::string &name)
-{
+void Server::joinChannel(int fd, const std::string &name) {
 	bool isNew = (_channels.find(name) == _channels.end());
 
 	if (isNew)
@@ -87,8 +96,7 @@ void Server::joinChannel(int fd, const std::string &name)
 	std::cout << std::endl;
 }
 
-void Server::partChannel(int fd, const std::string &name)
-{
+void Server::partChannel(int fd, const std::string &name) {
 	ChannelIt it = _channels.find(name);
 
 	if (it == _channels.end())

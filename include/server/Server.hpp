@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/22 17:17:48 by marwan            #+#    #+#             */
-/*   Updated: 2026/03/19 13:20:35 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/21 13:52:17 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ class Server {
 	std::map<std::string, CommandFn> _handlers;
 	std::map<int, BlackjackGame> _blackjackGames;
 
-	static bool _running;
+	static volatile sig_atomic_t _running;
 
   private:
 	void initCommandHandlers();
@@ -64,6 +64,7 @@ class Server {
 	void flushPendingWrites(int fd);
 	void removeClient(int fd);
 	void removeClientFromPoll(int fd);
+	void shutdown();
 	void updatePollEvents(int fd);
 	void sendReply(int fd, const std::string &reply);
 	void sendUserMsg(int fd, const std::string &target, const std::string &msg);

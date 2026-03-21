@@ -6,7 +6,7 @@
 /*   By: esouhail <esouhail@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/17 14:28:04 by esouhail          #+#    #+#             */
-/*   Updated: 2026/03/17 21:01:08 by esouhail         ###   ########.fr       */
+/*   Updated: 2026/03/21 13:52:00 by esouhail         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,5 +58,5 @@ void Server::start() {
 				flushPendingWrites(currentFd);
 		}
 	}
-	close(_serverFd);
+	shutdown();
 }
